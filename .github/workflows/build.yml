@@ -13,8 +13,6 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-linux
-          - os: windows-latest
-            target: x86_64-windows
             extra_flags: ""
           - os: macos-latest
             target: x86_64-macos
@@ -28,11 +26,6 @@ jobs:
         uses: goto-bus-stop/setup-zig@v2
         with:
           version: '0.14.0'
-
-      - name: Windows workaround
-        if: matrix.os == 'windows-latest'
-        run: |
-          Add-Content -Path build.zig -Value "`nexe.root_module.link_libc = true;" -Encoding utf8
 
       - name: Build
         run: |
