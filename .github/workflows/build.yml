@@ -1,0 +1,39 @@
+name: Build and Publish
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-linux
+          - os: windows-latest
+            target: x86_64-windows
+          - os: macos-latest
+            target: x86_64-macos
+          - os: macos-latest
+            target: aarch64-macos
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Zig
+        uses: euantorano/setup-zig@v1.2.1
+        with:
+          version: '0.14.0'
+
+      - name: Build
+        run: |
+          zig build -Doptimize=ReleaseFast -Dtarget=${{ matrix.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plscommit-${{ matrix.target }}
+          path: zig-out/bin/plscommit 
