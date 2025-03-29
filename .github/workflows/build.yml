@@ -14,8 +14,8 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-linux
           - os: windows-latest
-            target: x86_64-windows
-            extra_flags: "-Duse-lld=false"
+            target: x86_64-windows-gnu
+            extra_flags: "-Dlink-libc=true"
           - os: macos-latest
             target: x86_64-macos
           - os: macos-latest
