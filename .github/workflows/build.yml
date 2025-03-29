@@ -8,19 +8,7 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: x86_64-linux
-          - os: windows-latest
-            target: x86_64-windows
-            extra_flags: ""
-          - os: macos-latest
-            target: x86_64-macos
-          - os: macos-latest
-            target: aarch64-macos
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -29,17 +17,32 @@ jobs:
         with:
           version: '0.14.0'
 
-      - name: Windows workaround
-        if: matrix.os == 'windows-latest'
+      - name: Build for x86_64-linux
         run: |
-          Add-Content -Path build.zig -Value "`nexe.root_module.link_libc = true;" -Encoding utf8
+          zig build -Doptimize=ReleaseFast -Dtarget=x86_64-linux
+          mkdir -p artifacts
+          cp zig-out/bin/plscommit artifacts/plscommit-x86_64-linux
 
-      - name: Build
+      - name: Build for x86_64-windows
         run: |
-          zig build -Doptimize=ReleaseFast -Dtarget=${{ matrix.target }} ${{ matrix.extra_flags || '' }}
+          zig build -Doptimize=ReleaseFast -Dtarget=x86_64-windows
+          mkdir -p artifacts
+          cp zig-out/bin/plscommit artifacts/plscommit-x86_64-windows.exe
 
-      - name: Upload artifact
+      - name: Build for x86_64-macos
+        run: |
+          zig build -Doptimize=ReleaseFast -Dtarget=x86_64-macos
+          mkdir -p artifacts
+          cp zig-out/bin/plscommit artifacts/plscommit-x86_64-macos
+
+      - name: Build for aarch64-macos
+        run: |
+          zig build -Doptimize=ReleaseFast -Dtarget=aarch64-macos
+          mkdir -p artifacts
+          cp zig-out/bin/plscommit artifacts/plscommit-aarch64-macos
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: plscommit-${{ matrix.target }}
-          path: zig-out/bin/plscommit 
+          name: plscommit-binaries
+          path: artifacts/ 
