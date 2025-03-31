@@ -96,21 +96,36 @@ pub fn main() !void {
     defer if (needs_to_free_custom_type) allocator.free(custom_type);
 
     // Execute git commands using process.Child
-    // Add files to staging
-    var add_cmd_args = if (path_arg) |path|
-        [_][]const u8{ "git", "add", path }
-    else
-        [_][]const u8{ "git", "add", "." };
+    // First check if there are any staged files
+    var has_staged_files = false;
+    {
+        var diff_cmd_args = [_][]const u8{ "git", "diff", "--cached", "--quiet" };
+        var diff_cmd = std.process.Child.init(&diff_cmd_args, allocator);
+        diff_cmd.stderr_behavior = .Ignore;
+        diff_cmd.stdout_behavior = .Ignore;
+        
+        const diff_term = try diff_cmd.spawnAndWait();
+        // Exit code 1 means there are staged changes, 0 means no staged changes
+        has_staged_files = diff_term.Exited == 1;
+    }
 
-    var add_cmd = std.process.Child.init(&add_cmd_args, allocator);
-    add_cmd.stderr_behavior = .Inherit;
-    add_cmd.stdout_behavior = .Inherit;
+    // Only add files if there are no staged files
+    if (!has_staged_files) {
+        var add_cmd_args = if (path_arg) |path|
+            [_][]const u8{ "git", "add", path }
+        else
+            [_][]const u8{ "git", "add", "." };
 
-    const add_term = try add_cmd.spawnAndWait();
+        var add_cmd = std.process.Child.init(&add_cmd_args, allocator);
+        add_cmd.stderr_behavior = .Inherit;
+        add_cmd.stdout_behavior = .Inherit;
 
-    if (add_term.Exited != 0) {
-        try out.writeAll("Error adding files to git\n");
-        return;
+        const add_term = try add_cmd.spawnAndWait();
+
+        if (add_term.Exited != 0) {
+            try out.writeAll("Error adding files to git\n");
+            return;
+        }
     }
 
     // Create commit
